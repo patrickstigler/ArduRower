@@ -1,29 +1,25 @@
+#include "Arduino.h"
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLEAdvertising.h>
 #include <BLE2902.h>
 #include "RunningAverage.h" // https://github.com/RobTillaart/Arduino/tree/master/libraries/RunningAverage
-
 //#include "esp_bt_main.h"
 //#include "esp_gap_bt_api.h"
 
 #include "SSD1306.h"
 #include "font.h" //// Created by http://oleddisplay.squix.ch/
-
-#define btnRIGHT  0
-#define btnUP     1
-#define btnDOWN   2
-#define btnLEFT   3
-#define btnSELECT 4
-#define btnNONE   5
+#include "heltec.h"
+#define btnRIGHT  10
+#define btnUP     11
+#define btnDOWN   12
+#define btnLEFT   13
+#define btnSELECT 14
+#define btnNONE   15
 
 // Oled Display
-#define SDA    4
-#define SCL   15
-#define RST_LED   16 //RST must be set by software
-//SSD1306  display(0x3c, SDA, SCL, RST_LED);
-SSD1306  display(0x3c, 4, 15, GEOMETRY_128_64);                // ADDRESS, SDA, SCL, GEOMETRY_128_32 (or 128_64)
+SSD1306Wire display(0x3c, SDA_OLED, SCL_OLED, RST_OLED);
 
 // Global Define 
 #define _VERSION          0.05
@@ -157,13 +153,13 @@ unsigned long previousTime=0;
 unsigned long battPreviousTime=0;
 
 /*-----------------SETUP--PINS-----------------------------*/
-const int ROWERINPUT = 2; // the input pin where the waterrower sensor is connected
+const int ROWERINPUT = 4; // the input pin where the waterrower sensor is connected
 const int BUTTONSPIN = 0;
 
 /*-----------------CONSTANTS-------------------------------*/
 //const float Ratio = 4.8; // from old script 4.8; meters per rpm = circumference of rotor (D=34cm) -> 1,068m -> Ratio = 0.936 ; WaterRower 7,3 m/St. -> Ratio: 3.156
 //const float Ratio = 0.79; //one magnet
-const float Ratio = 3.156;
+const float Ratio = 0.79; //3.156;
 
 RunningAverage stm_RA(21); // size of array for strokes/min
 RunningAverage mps_RA(7); // size of array for meters/second -> emulates momentum of boat
@@ -567,13 +563,15 @@ void setCxBattery(){
 }
 
 void row_start() {
-  display.clear();
-  display.setColor(WHITE);
+  
+  display.setColor(WHITE); 
   display.setFont(ArialMT_Plain_24);
   display.setTextAlignment(TEXT_ALIGN_CENTER);
+  display.clear();  
   display.drawString(64, 10, "Waiting");
   display.drawString(64, 34, "for start");
   display.display();
+
   delay(100);
   while (clicks == 0) {};
 
@@ -806,15 +804,16 @@ void displayTimeBattery()
 void setup() {
 
   // Start the OLED Display
+
   display.init();
+  display.clear();
   display.setFont(ArialMT_Plain_16);
   display.flipScreenVertically();                 // this is to flip the screen 180 degrees
 
-  display.clear();
   display.setColor(WHITE);
   display.setTextAlignment(TEXT_ALIGN_CENTER);
-  display.drawString(64, 4, "ArduRower");
-  display.display();
+  display.drawString(64, 4, "DIY Rower");
+  display.display(); 
 
   SerialDebug.begin(115200);
   SerialDebug.println("/************************************");
@@ -946,9 +945,10 @@ void rowing() {
 
     }
     
-    display.clear();
+    
     display.setFont(ArialMT_Plain_10);
     display.setTextAlignment(TEXT_ALIGN_LEFT);
+    display.clear();
     display.drawString(5, 23, "meters");
     //display.drawString(24, 53, "time");
     display.drawString(100, 23, "m/s");
@@ -995,7 +995,7 @@ void rowing() {
 
 /*-------SIMULATE ROWING-------------*/
 //      if (random(0, 100) < 30) {
-//         rowerinterrupt();
+//        rowerinterrupt();
 //         }
 /*-------SIMULATE ROWING-------------*/
 
