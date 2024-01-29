@@ -162,6 +162,7 @@ const int BUTTONSPIN = 0;
 const float Ratio = 3.156; //3.156;
 
 RunningAverage stm_RA(21); // size of array for strokes/min
+RunningAverage ticks(10);
 RunningAverage mps_RA(7); // size of array for meters/second -> emulates momentum of boat
 RunningAverage battery_RA(40);
 
@@ -199,6 +200,7 @@ int strokes = 0;
 int trend = 0;
 int resetTimer = 0;
 
+void reset();
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
@@ -224,7 +226,10 @@ class MyCallbacks: public BLECharacteristicCallbacks {
         else {
           for (int i = 0; i < rxValue.length(); i++) {
             char chr = rxValue[i];
-            SerialDebug.print(chr + "Int:" + (int)chr);
+            if (chr == 1)  {
+              reset();
+            }
+            SerialDebug.print(chr + " Int:" + int(chr));
           }
         }  
           SerialDebug.println();
@@ -319,11 +324,17 @@ void initBLE(){
     );            
   pService2->start();
 
+  char cSoftwareRevision[3];
+  cSoftwareRevision[0] = 0x34;
+  cSoftwareRevision[1] = 0x2E;
+  cSoftwareRevision[2] = 0x33;
+
   pCharacteristic24->setValue("4");
   pCharacteristic25->setValue("0000");
   pCharacteristic26->setValue("0.30");
   pCharacteristic27->setValue("2.2BLE");
-  pCharacteristic28->setValue("4.3");
+ //pCharacteristic28->setValue("4.3");
+  pCharacteristic28->setValue((uint8_t*)cSoftwareRevision, 3);
   pCharacteristic29->setValue("Waterrower");
 
   char cRower[8];
@@ -632,20 +643,27 @@ void variableParameter(){
     //lcd.print(data_output);
 }
 
+long last_ddt = 0;
+long timeLastStroke = 0;
+
 /*------------------INTERRUPT-----------------------------------*/
 void IRAM_ATTR calcrpm() {
   click_time = millis();
-  rpm = 60000 / (click_time - last_click_time);
+    //rpm = 60000 / (click_time - last_click_time);
+
+  long ddt = click_time - last_click_time;
   last_click_time = click_time;
-  accel = rpm - old_rpm;
-  if ((accel > 20) && (puffer == 0)){ // > 20 to eliminate micro "acceleration" due to splashing water (3 for one magnet)
-    strokes ++;
-    puffer = 20; // prevents counting two strokes due to still accelerating rotor
-  }
-  if (puffer > 0){
-    puffer --;
-  }
-  old_rpm = rpm;
+  SerialDebug.println(ddt);
+  if (ddt < (0.95*last_ddt)) {
+        // new stroke
+        if ((click_time - timeLastStroke) > 1400) {
+          //strokes_minute = 60000/(newTime - timeLastStroke);
+          //avg_speed = 1000*(distance - distance_last_stroke)/(newTime - timeLastStroke);          
+          timeLastStroke = click_time;
+          strokes++;
+        }
+      }
+      last_ddt = ddt;
 }
 
 void IRAM_ATTR rowerinterrupt() {
@@ -727,6 +745,9 @@ void reset() {
   rpm = 0;
   stm_RA.clear();
   mps_RA.clear();
+  for (int i = 0; i < 20; i++ ) {
+    ticks.add(0.0f);
+  }
   trend = 0;
   resetTimer = 0;
   //lcd.clear();
@@ -886,7 +907,7 @@ void rowing() {
 
       if (deviceConnected) {        //** Send a value to protopie. The value is in txValue **//
 
-        long sec = 1000 * (millis() - start);
+        long sec = 1000*(millis() - start);
         rdKpi.strokeRate = (int)round(spm + old_spm);
         rdKpi.strokeCount = strokes;
         rdKpi.averageStokeRate = (int)(strokes * 60 * 2 / sec);
@@ -896,7 +917,7 @@ void rowing() {
         rdKpi.averagePace = (int)round(500 / avrMs);
         rdKpi.instantaneousPower = (int)round(2.8 * Ms * Ms * Ms); //https://www.concept2.com/indoor-rowers/training/calculators/watts-calculator
         rdKpi.averagePower = (int)round(2.8 * avrMs * avrMs * avrMs);
-        rdKpi.elapsedTime = sec;
+        rdKpi.elapsedTime = sec/1000000;
 
         setCxRowerData();
         //setCxLightRowerData();
