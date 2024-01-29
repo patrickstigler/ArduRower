@@ -173,7 +173,7 @@ volatile unsigned long last_click_time = 0;
 volatile unsigned long old_split = 0;
 volatile unsigned long split_time = 0;
 volatile unsigned long start_split;
-long debouncing_time = 15; //Debouncing Time in Milliseconds
+long debouncing_time = 15000; //Debouncing Time in Microseconds
 volatile unsigned long last_micros;
 volatile int clicks = 0;
 volatile int clicks_old = 0;
@@ -666,12 +666,10 @@ void IRAM_ATTR rowerinterrupt() {
 
 /*-----debounce------*/
 void IRAM_ATTR rowerdebounceinterrupt() {
-  noInterrupts();
-  if ((long)(micros() - last_micros) >= debouncing_time * 1000) {
+  if ((long)(micros() - last_micros) >= debouncing_time) {
     rowerinterrupt();
     last_micros = micros();
   }
-  interrupts();
 }
 
 //calculate and return meters per second
