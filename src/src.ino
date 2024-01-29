@@ -153,13 +153,13 @@ unsigned long previousTime=0;
 unsigned long battPreviousTime=0;
 
 /*-----------------SETUP--PINS-----------------------------*/
-const int ROWERINPUT = 4; // the input pin where the waterrower sensor is connected
+const int ROWERINPUT = 2; // the input pin where the waterrower sensor is connected
 const int BUTTONSPIN = 0;
 
 /*-----------------CONSTANTS-------------------------------*/
 //const float Ratio = 4.8; // from old script 4.8; meters per rpm = circumference of rotor (D=34cm) -> 1,068m -> Ratio = 0.936 ; WaterRower 7,3 m/St. -> Ratio: 3.156
 //const float Ratio = 0.79; //one magnet
-const float Ratio = 0.79; //3.156;
+const float Ratio = 3.156; //3.156;
 
 RunningAverage stm_RA(21); // size of array for strokes/min
 RunningAverage mps_RA(7); // size of array for meters/second -> emulates momentum of boat
@@ -790,6 +790,7 @@ void displayTimeBattery()
 
   display.setFont(Roboto_Slab_Bold_38);
   display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.clear();
   display.drawString(0, 24, str);
 
   display.fillRect(0, 0, 2, 5);
@@ -806,12 +807,11 @@ void setup() {
   // Start the OLED Display
 
   display.init();
-  display.clear();
   display.setFont(ArialMT_Plain_16);
-  display.flipScreenVertically();                 // this is to flip the screen 180 degrees
-
+ // display.flipScreenVertically();                 // this is to flip the screen 180 degrees
   display.setColor(WHITE);
   display.setTextAlignment(TEXT_ALIGN_CENTER);
+  display.clear();
   display.drawString(64, 4, "DIY Rower");
   display.display(); 
 
